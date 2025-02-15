@@ -3,11 +3,24 @@ using System.Collections;
 
 public class BoxingGlovesMover : MonoBehaviour
 {
-    public float moveSpeed = 2.0f; // Adjust for realistic movement
+    public float moveSpeed = 10.0f; // Adjust for realistic movement
+    private Vector3 targetPosition; // Position to move towards
+    private bool isMovingToTarget = false;
 
-    public void StartMoving()
+    public void StartMoving(Vector3 targetPos = default)
     {
-        StartCoroutine(MoveForward());
+        if (targetPos != default)
+        {
+            // If a target position is provided, move towards it
+            targetPosition = targetPos;
+            isMovingToTarget = true;
+            StartCoroutine(MoveToTarget());
+        }
+        else
+        {
+            // Otherwise, just move forward relative to the camera
+            StartCoroutine(MoveForward());
+        }
     }
 
     private IEnumerator MoveForward()
@@ -21,6 +34,16 @@ public class BoxingGlovesMover : MonoBehaviour
         {
             transform.position += moveDirection * moveSpeed * Time.deltaTime;
             elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private IEnumerator MoveToTarget()
+    {
+        while (transform.position != targetPosition)
+        {
+            // Move towards the target position
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
             yield return null;
         }
     }

@@ -1,14 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.XR.ARFoundation;
 using TMPro;
+using System.Collections;
 
 public class ARLaserTagUI : MonoBehaviour
 {
     public TextMeshProUGUI scoreText;
-    public GameObject filledHeartPrefab;     
-    public GameObject emptyHeartPrefab;      
-    public Transform healthContainer;  
+    public TextMeshProUGUI playerhealthText;
     public TextMeshProUGUI timerText;
     public TextMeshProUGUI playerAmmoText;
     public TextMeshProUGUI playerShieldText;
@@ -17,59 +15,127 @@ public class ARLaserTagUI : MonoBehaviour
     public TextMeshProUGUI enemyAmmoText;
     public TextMeshProUGUI enemyShieldText;
     public Image enemyShieldCooldown;
+    public Image[] playerBombIcons;  // Array to hold 2 bomb icons for the player
+    public Image[] enemyBombIcons;   // Array to hold 2 bomb icons for the enemy
+
     public Button shootButton;
     public Button reloadButton;
-    public Button shieldButton;
+    public Button shieldButton; 
+    public Button enemyShieldButton;
     public Button badmintonButton;
     public Button boxingButton;
     public Button snowBombButton;
-
+    public Button fencingButton;
+    public Button golfButton;
     public SnowBombAttack snowBombAttack;
     public BadmintonAttack badmintonAttack;
     public BoxingAttack boxingAttack;
-    public Button hitButton; 
+    public FencingAttack fencingAttack;
+    public GolfAttack golfAttack;
+    public Button hitButton;
     public Canvas gameCanvas;
-    
+    public GameObject shooterObject;
+    public GameObject enemyObject;  // Reference to the enemy object
+    public GameObject enemyIsVisible;  // Reference to the enemy's visibility status
+    public GameObject enemyShieldActiveFlag;
     private int score = 0;
-    private int ammo = 10;
-    private int playerHealth = 5;
-    private int playerShield = 3;
+    private int ammo = 6;
+    private int playerHealth = 100;
+    private int playerShieldCount = 3;
     private int enemyHealth = 100;
-    private int enemyShield = 3;
+    private int playerbomb = 2;
+    private int enemybomb = 2;
+    private int enemyShieldCount = 3;
+    private int enemyAmmo = 6;
     private float timer = 300f; // 5-minute game timer
+    public int shieldHealth = 30;  // Total HP of the shield
+    private bool isPlayerShieldActive = false;  // Flag to check if the player's shield is active
+    private bool isEnemyShieldActive = false;  // Flag to check if the enemy's shield is active
+    private float shieldDepletionRate = 1f;  // Shield depletion rate (optional)
+    private bool isReloading = false; // Track reload state
+    private Button[] allButtons;
 
-    private bool isShieldActive = false;
-    private float shieldDepletionTime = 2f;
-    private float shieldDepletionRate;
-    
+    // New Variables
+    private int playerShieldHealth = 0;  // Player's shield health
+    private int enemyShieldHealth = 0;   // Enemy's shield health
+
     void Start()
     {
+        // Initialize button references
+        allButtons = new Button[] { shootButton, reloadButton, shieldButton, badmintonButton, boxingButton, snowBombButton, fencingButton, golfButton, hitButton };
+
         // Ensure the UI is properly positioned for landscape mode
         gameCanvas.GetComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         gameCanvas.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1920, 1080);
         gameCanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-        
-        UpdateUI();
-        UpdateHealthUI(playerHealth);
 
-        shieldDepletionRate = 1f / shieldDepletionTime;
-        shootButton.onClick.AddListener(Shoot);
+        UpdateUI();
+
+        shieldDepletionRate = 1f / shieldHealth;
+        shootButton.onClick.AddListener(OnShootButtonPressed);
         reloadButton.onClick.AddListener(Reload);
         shieldButton.onClick.AddListener(ActivateShield);
         badmintonButton.onClick.AddListener(LaunchBadmintonAttack);
         boxingButton.onClick.AddListener(LaunchBoxingAttack);
-        snowBombButton.onClick.AddListener(snowBombAttack.LaunchSnowbomb);
+        snowBombButton.onClick.AddListener(LaunchSnowBombAttack);
+        fencingButton.onClick.AddListener(LaunchFencingAttack);
+        golfButton.onClick.AddListener(LaunchGolfAttack);
+        enemyShieldButton.onClick.AddListener(ActivateEnemyShield);
         hitButton.onClick.AddListener(TakeHit);
         InvokeRepeating("UpdateTimer", 1f, 1f);
     }
-    
-    void Shoot()
+
+    void OnShootButtonPressed()
     {
         if (ammo > 0)
         {
             ammo--;
-            Debug.Log("Shot fired!");
-            UpdateUI();
+            if (shooterObject != null)
+            {
+                shooterObject.GetComponent<HoldGun>().Shoot();  // Ensure 'SomeShootComponent' is the script that has the Shoot method
+            }
+            else
+            {
+                Debug.LogWarning("❌ Shooter object not assigned!");
+            }
+
+            // If the enemy is visible and the enemy's shield is active
+            if (enemyIsVisible.activeSelf)
+            {
+                if (isEnemyShieldActive)
+                {
+                    // Block damage with enemy's shield if it's active
+                    int damageToShield = 5;
+
+                    // If the enemy's shield can absorb all damage
+                    if (enemyShieldHealth >= damageToShield)
+                    {
+                        enemyShieldHealth -= damageToShield;
+                        if (enemyShieldHealth == 0){
+                            isEnemyShieldActive = false;
+                            enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                            }
+                        Debug.Log("Enemy Shield Health: " + enemyShieldHealth);
+                    }
+                    else
+                    {
+                        // If the shield is depleted, apply the remainder damage to enemy health
+                        int remainingDamage = damageToShield - enemyShieldHealth;
+                        enemyHealth -= remainingDamage;
+                        enemyShieldHealth = 0;
+                        isEnemyShieldActive = false;  // Shield deactivated
+                        Debug.Log("Enemy Health after shield depleted: " + enemyHealth);
+                    }
+                }
+                else
+                {
+                    // No shield active, apply damage to enemy health directly
+                    enemyHealth -= 5;
+                    Debug.Log("Enemy Health: " + enemyHealth);
+                }
+
+                UpdateUI();
+            }
         }
     }
 
@@ -77,68 +143,312 @@ public class ARLaserTagUI : MonoBehaviour
     {
         if (playerHealth > 0)
         {
-            playerHealth--;  // Decrease health by 1
-            Debug.Log("Player Health: " + playerHealth);
+            // If player's shield is active, absorb damage with the shield
+            if (isPlayerShieldActive)
+            {
+                int damageToShield = 10;
+
+                // If the player's shield can absorb all damage
+                if (playerShieldHealth >= damageToShield)
+                {
+                    playerShieldHealth -= damageToShield;
+                    if (playerShieldHealth == 0){
+                        isPlayerShieldActive = false;
+                    }
+                    Debug.Log("Player Shield Health: " + playerShieldHealth);
+                }
+                else
+                {
+                    // If the shield is depleted, apply the remainder damage to player health
+                    int remainingDamage = damageToShield - playerShieldHealth;
+                    playerHealth -= remainingDamage;
+                    playerShieldHealth = 0;
+                    isPlayerShieldActive = false;  // Shield deactivated
+                    Debug.Log("Player Health after shield depleted: " + playerHealth);
+                }
+            }
+            else
+            {
+                // If no shield, damage the player's health directly
+                playerHealth -= 10;
+                Debug.Log("Player Health: " + playerHealth);
+            }
+
             UpdateUI();
         }
     }
 
-    
-    
-    void Reload()
+    void LaunchBadmintonAttack()
+{
+    badmintonAttack.LaunchBadmintonAttack();
+
+    if (enemyIsVisible.activeSelf)
     {
-        ammo = 10;
-        Debug.Log("Reloaded!");
+        if (isEnemyShieldActive)
+        {
+            ShieldSparks();
+            int damageToShield = 10;
+
+            if (enemyShieldHealth >= damageToShield)
+            {
+                enemyShieldHealth -= damageToShield;
+                if (enemyShieldHealth == 0){
+                    isEnemyShieldActive = false;
+                    enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                }
+                Debug.Log("Enemy Shield Health: " + enemyShieldHealth);
+            }
+            else
+            {
+                int remainingDamage = damageToShield - enemyShieldHealth;
+                enemyHealth -= remainingDamage;
+                enemyShieldHealth = 0;
+                isEnemyShieldActive = false;
+                enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                Debug.Log("Enemy Health after shield depleted: " + enemyHealth);
+            }
+        }
+        else
+        {
+            enemyHealth -= 10;
+            Debug.Log("Enemy Health: " + enemyHealth);
+        }
+
         UpdateUI();
     }
+}
 
-    void LaunchBadmintonAttack()
+void LaunchBoxingAttack()
+{
+    boxingAttack.LaunchBoxingAttack();
+
+    if (enemyIsVisible.activeSelf)
     {
-    // Call the LaunchBadmintonAttack() method from your BadmintonAttack.cs
-        badmintonAttack.LaunchBadmintonAttack();  // This will trigger the attack from your BadmintonAttack script
+        if (isEnemyShieldActive)
+        {
+            ShieldSparks();
+            int damageToShield = 10;
+
+            if (enemyShieldHealth >= damageToShield)
+            {
+                enemyShieldHealth -= damageToShield;
+                if (enemyShieldHealth == 0){
+                    isEnemyShieldActive = false;
+                    enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                }
+                Debug.Log("Enemy Shield Health: " + enemyShieldHealth);
+            }
+            else
+            {
+                int remainingDamage = damageToShield - enemyShieldHealth;
+                enemyHealth -= remainingDamage;
+                enemyShieldHealth = 0;
+                isEnemyShieldActive = false;
+                enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                Debug.Log("Enemy Health after shield depleted: " + enemyHealth);
+            }
+        }
+        else
+        {
+            enemyHealth -= 10;
+            Debug.Log("Enemy Health: " + enemyHealth);
+        }
+
+        UpdateUI();
+    }
+}
+
+void LaunchSnowBombAttack()
+{
+    if (playerbomb > 0)
+    {
+        snowBombAttack.LaunchSnowbomb();
+        playerbomb--;
+    }
+}
+
+void LaunchFencingAttack()
+{
+    if (fencingAttack != null)
+    {
+        fencingAttack.LaunchFencingAttack();
     }
 
-    void LaunchBoxingAttack()
+    if (enemyIsVisible.activeSelf)
     {
-    // Call the LaunchBadmintonAttack() method from your BadmintonAttack.cs
-        boxingAttack.LaunchBoxingAttack();  // This will trigger the attack from your BadmintonAttack script
+        if (isEnemyShieldActive)
+        {
+            ShieldSparks();
+            int damageToShield = 10;
+
+            if (enemyShieldHealth >= damageToShield)
+            {
+                enemyShieldHealth -= damageToShield;
+                if (enemyShieldHealth == 0){
+                    isEnemyShieldActive = false;
+                    enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                }
+                Debug.Log("Enemy Shield Health: " + enemyShieldHealth);
+            }
+            else
+            {
+                int remainingDamage = damageToShield - enemyShieldHealth;
+                enemyHealth -= remainingDamage;
+                enemyShieldHealth = 0;
+                isEnemyShieldActive = false;
+                enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                Debug.Log("Enemy Health after shield depleted: " + enemyHealth);
+            }
+        }
+        else
+        {
+            enemyHealth -= 10;
+            Debug.Log("Enemy Health: " + enemyHealth);
+        }
+
+        UpdateUI();
+    }
+}
+
+void LaunchGolfAttack()
+{
+    if (golfAttack != null)
+    {
+        golfAttack.LaunchGolfAttack();
     }
 
-    void LaunchSnowBombAttack()
+    if (enemyIsVisible.activeSelf)
     {
-    // Call the LaunchBadmintonAttack() method from your BadmintonAttack.cs
-        snowBombAttack.LaunchSnowbomb();  // This will trigger the attack from your BadmintonAttack script
+        if (isEnemyShieldActive)
+        {
+            ShieldSparks();
+            int damageToShield = 10;
+
+            if (enemyShieldHealth >= damageToShield)
+            {
+                enemyShieldHealth -= damageToShield;
+                if (enemyShieldHealth == 0){
+                    isEnemyShieldActive = false;
+                    enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                }
+                Debug.Log("Enemy Shield Health: " + enemyShieldHealth);
+            }
+            else
+            {
+                int remainingDamage = damageToShield - enemyShieldHealth;
+                enemyHealth -= remainingDamage;
+                enemyShieldHealth = 0;
+                isEnemyShieldActive = false;
+                enemyShieldActiveFlag.SetActive(false);  // Deactivate the enemy shield flag
+                Debug.Log("Enemy Health after shield depleted: " + enemyHealth);
+            }
+        }
+        else
+        {
+            enemyHealth -= 10;
+            Debug.Log("Enemy Health: " + enemyHealth);
+        }
+
+        UpdateUI();
+    }
+}
+
+
+    private IEnumerator ReloadAndRefillAmmo()
+    {
+        isReloading = true;
+
+        // Disable all buttons during reload
+        foreach (Button button in allButtons)
+        {
+            button.interactable = false;
+        }
+
+        // Call the reload function on the shooter object
+        shooterObject.GetComponent<HoldGun>().Reload();
+
+        // Wait for 2 seconds before refilling ammo
+        yield return new WaitForSeconds(2f);
+
+        // Refill ammo
+        ammo = 6;
+        UpdateUI();
+
+        // Re-enable all buttons after reload
+        foreach (Button button in allButtons)
+        {
+            button.interactable = true;
+        }
+
+        isReloading = false;
+    }
+
+    // Reload method
+    void Reload()
+    {
+        if (!isReloading && ammo == 0) // Prevent reload while already reloading
+        {
+            StartCoroutine(ReloadAndRefillAmmo());
+        }
     }
 
     void ActivateShield()
     {
-        if (playerShield > 0)
+        if (playerShieldCount > 0 && !isPlayerShieldActive)
         {
-            isShieldActive = true;  // Activate the shield
+            playerShieldHealth = 30;
+            isPlayerShieldActive = true;  // Activate the player's shield
             playerShieldCooldown.fillAmount = 1f; // Set the shield to full
-            playerShieldText.text = "Shield: " + playerShield; // Update the text immediately
+            playerShieldCount--;
+            playerShieldText.text = "Shield: " + playerShieldCount; // Update the text immediately
         }
     }
 
+    void ActivateEnemyShield()
+    {
+        if (enemyShieldCount > 0 && !isEnemyShieldActive)
+        {
+            enemyShieldHealth = 30;
+            isEnemyShieldActive = true;
+            enemyShieldCount--;
+            enemyShieldText.text = "Enemy Shield: " + enemyShieldCount;
+            enemyShieldActiveFlag.SetActive(true);
+        }
+    }
 
     void Update()
     {
-        if (isShieldActive)
+        // Check if player health drops below 0
+        if (playerHealth <= 0)
         {
-            // Deplete the shield over time
-            playerShieldCooldown.fillAmount -= shieldDepletionRate * Time.deltaTime;
+            ResetPlayerStats();
+        }
 
-            // If the shield is depleted, stop the depletion and set it to 0
-            if (playerShieldCooldown.fillAmount <= 0f)
-            {
-                playerShieldCooldown.fillAmount = 0f;
-                isShieldActive = false; // Shield is no longer active
-                playerShield--; // Set the shield to 0 when it's depleted
-                UpdateUI(); // Update the UI
-            }
+        // Check if enemy health drops below 0
+        if (enemyHealth <= 0)
+        {
+            ResetEnemyStats();
         }
     }
-    
+
+    void ResetPlayerStats()
+    {
+        playerHealth = 100;
+        ammo = 6;
+        playerShieldCount = 3;
+        playerbomb = 2;
+        UpdateUI();
+    }
+
+    void ResetEnemyStats()
+    {
+        enemyHealth = 100;
+        enemyAmmo = 6;
+        enemyShieldCount = 3;
+        enemybomb = 2;
+        UpdateUI();
+    }
+
     void UpdateTimer()
     {
         if (timer > 0)
@@ -148,49 +458,64 @@ public class ARLaserTagUI : MonoBehaviour
         }
     }
 
-    void UpdateHealthUI(int health)
+    void ShieldSparks()
 {
-    // Clear previous health icons
-    foreach (Transform child in healthContainer)
+    if (enemyShieldActiveFlag != null)
     {
-        Destroy(child.gameObject);
+        // Assuming 'ShieldSparks()' is a method on the enemy shield flag that creates sparks when the shield is hit
+        enemyShieldActiveFlag.GetComponent<EnemyShieldHandler>().ShieldSparks();  
+    }
+}
+
+    void UpdateUI()
+{
+    scoreText.text = "Score: " + score;
+    timerText.text = "Time: " + Mathf.FloorToInt(timer / 60) + ":" + (timer % 60).ToString("00");
+    playerAmmoText.text = "Ammo: " + ammo;
+    playerShieldText.text = "Shield: " + playerShieldCount;
+    playerhealthText.text = "Health: " + playerHealth;
+    enemyHealthText.text = "Enemy Health: " + enemyHealth;
+    enemyAmmoText.text = "Enemy Ammo: " + enemyAmmo;
+    enemyShieldText.text = "Enemy Shield: " + enemyShieldCount;
+
+    // Update the player's shield cooldown based on the remaining shield health
+    if (playerShieldHealth > 0)
+    {
+        playerShieldCooldown.fillAmount = (float)playerShieldHealth / 30f;  // 30 is the maximum shield health
+    }
+    else
+    {
+        playerShieldCooldown.fillAmount = 0f;  // No shield left
     }
 
-    int maxHealth = 5;
+    // Update the enemy shield cooldown (based on enemy's shield health)
+    enemyShieldCooldown.fillAmount = (float)enemyShieldHealth / 30f;  // Assuming 30 is max enemy shield health
 
-    for (int i = 0; i < maxHealth; i++)
+    // Update the bomb icons for the player
+    for (int i = 0; i < playerBombIcons.Length; i++)
     {
-        GameObject heart;
-        if (i < health)
+        if (i < playerbomb)
         {
-            // Instantiate filled heart (full health)
-            heart = Instantiate(filledHeartPrefab, healthContainer);
-
-            // Trigger animation if it's a filled heart
-            Animator heartAnimator = heart.GetComponent<Animator>();
-            if (heartAnimator != null)
-            {
-                heartAnimator.Play("HeartFillAnimation");  // Play the fill animation
-            }
+            playerBombIcons[i].enabled = true;  // Show bomb icon
         }
         else
         {
-            // Instantiate empty heart (no health)
-            heart = Instantiate(emptyHeartPrefab, healthContainer);
+            playerBombIcons[i].enabled = false;  // Hide bomb icon
+        }
+    }
+
+    // Update the bomb icons for the enemy
+    for (int i = 0; i < enemyBombIcons.Length; i++)
+    {
+        if (i < enemybomb)
+        {
+            enemyBombIcons[i].enabled = true;  // Show bomb icon
+        }
+        else
+        {
+            enemyBombIcons[i].enabled = false;  // Hide bomb icon
         }
     }
 }
-    
-    void UpdateUI()
-    {
-        scoreText.text = "Score: " + score;
-        timerText.text = "Time: " + Mathf.FloorToInt(timer / 60) + ":" + (timer % 60).ToString("00");
-        UpdateHealthUI(playerHealth);
-        playerAmmoText.text = "Ammo: " + ammo;
-        playerShieldText.text = "Shield: " + playerShield;
-        enemyHealthText.text = "Enemy Health: " + enemyHealth;
-        enemyAmmoText.text = "Enemy Ammo: ?";
-        enemyShieldText.text = "Enemy Shield: " + enemyShield;
-        enemyShieldCooldown.fillAmount = (enemyShield > 0) ? 1f : 0f;
-    }
+
 }

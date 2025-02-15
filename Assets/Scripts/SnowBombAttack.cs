@@ -1,69 +1,39 @@
 using UnityEngine;
-using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
 using System.Collections;
-using System.Collections.Generic;
 
 public class SnowBombAttack : MonoBehaviour
 {
-    public GameObject snowbombPrefab;  // The snowbomb projectile
-    public GameObject snowfallPrefab;  // The snowfall effect
-    public float launchSpeed = 2f;     // Speed of snowbomb movement
+    public GameObject snowbombPrefab;
+    public GameObject snowfallPrefab;
+    public GameObject additionalPrefab; // The new prefab to spawn after snowbomb despawns
+    public float launchSpeed = 2f;
 
-    private Vector3 targetPosition;    // Position to send snowbomb
-    private bool hasTarget = false;    // Check if we have a valid target
-    private ARTrackedImageManager imageManager; // AR Tracked Image Manager
-    private ARTrackedImage currentTrackedImage; // Current tracked image being used
+    public GameObject trackingTarget; // The GameObject that contains the flag and target position
 
-    void Start()
+    public GameObject targetFlag; // Reference to the target flag (set in the inspector)
+
+    void Awake()
     {
-        // Use FindFirstObjectByType to get ARTrackedImageManager from the scene
-        imageManager = Object.FindFirstObjectByType<ARTrackedImageManager>();
-        if (imageManager == null)
-        {
-            Debug.LogError("ARTrackedImageManager not found in the scene.");
-        }
-    }
+        // Get the flag GameObject (make sure it has been set in the inspector)
+        targetFlag = trackingTarget.transform.Find("TargetFlag").gameObject;
 
-    void Update()
-    {
-        if (imageManager != null)
+        if (targetFlag == null)
         {
-            CheckTrackedImages();
-        }
-    }
-
-    private void CheckTrackedImages()
-    {
-        // Iterate through all tracked images
-        foreach (ARTrackedImage trackedImage in imageManager.trackables)
-        {
-            if (trackedImage.trackingState == TrackingState.Tracking)
-            {
-                // Set the target position to the tracked image position if found
-                targetPosition = trackedImage.transform.position;
-                currentTrackedImage = trackedImage;
-                hasTarget = true;
-                break; // Only use the first image found
-            }
-            else
-            {
-                // If the image is no longer tracked, remove its effect
-                if (trackedImage == currentTrackedImage)
-                {
-                    hasTarget = false;
-                }
-            }
+            Debug.LogError("❌ No TargetFlag found under trackingTarget.");
         }
     }
 
     public void LaunchSnowbomb()
     {
-        if (!hasTarget)
+        // Check if the target flag is active (i.e., a valid target exists)
+        if (targetFlag == null || !targetFlag.activeSelf)
         {
-            Debug.Log("No tracked image detected, cannot launch snowbomb!");
+            Debug.Log("No valid target for Snowbomb!");
             return;
         }
+
+        // Access the target position from the trackingTarget (which should be set by ImageTrackingHandler)
+        Vector3 targetPosition = trackingTarget.transform.position;
 
         GameObject snowbomb = Instantiate(snowbombPrefab, Camera.main.transform.position, Quaternion.identity);
         StartCoroutine(MoveSnowbomb(snowbomb, targetPosition));
@@ -71,7 +41,7 @@ public class SnowBombAttack : MonoBehaviour
 
     private IEnumerator MoveSnowbomb(GameObject snowbomb, Vector3 target)
     {
-        float duration = 2f; 
+        float duration = 2f;
         float elapsedTime = 0f;
         Vector3 startPosition = snowbomb.transform.position;
 
@@ -82,23 +52,45 @@ public class SnowBombAttack : MonoBehaviour
             yield return null;
         }
 
-        Destroy(snowbomb);
-        SpawnSnowfall(target);
+        Destroy(snowbomb); // Destroy the snowbomb after it reaches the target
+        SpawnSnowfall(target); // Spawn snowfall at the target position
+        SpawnAdditionalPrefab(target); // Spawn the additional prefab after snowbomb despawns
     }
 
     private void SpawnSnowfall(Vector3 position)
     {
         GameObject snowfall = Instantiate(snowfallPrefab, position, Quaternion.identity);
-        snowfall.transform.SetParent(null); // Keeps it anchored in world space
+        snowfall.transform.SetParent(null);
 
-    // Optionally scale the snowfall effect to fit the AR scene better
-        float scaleFactor = 0.5f;  // Adjust this value to scale the snowfall effect
-        snowfall.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
-
-    // Optionally add Rigidbody and Collider for physical anchoring
         Rigidbody snowfallRb = snowfall.AddComponent<Rigidbody>();
-        snowfallRb.isKinematic = true;  // Ensures it stays in place after falling
+        snowfallRb.isKinematic = true;
 
         Debug.Log("Snowfall started at: " + position);
     }
+
+    private void SpawnAdditionalPrefab(Vector3 position)
+{
+    if (additionalPrefab != null)
+    {
+        GameObject spawnedObject = Instantiate(additionalPrefab, position, Quaternion.identity);
+        ParticleSystem ps = spawnedObject.GetComponent<ParticleSystem>();
+
+        if (ps != null)
+        {
+            ps.Play(); // Manually start the particle effect
+            Destroy(spawnedObject, ps.main.duration + ps.main.startLifetime.constantMax); // Destroy after effect ends
+        }
+        else
+        {
+            Destroy(spawnedObject, 5f); // Fallback destroy after 5 seconds
+        }
+
+        Debug.Log("✅ Additional prefab spawned and manually started at: " + position);
+    }
+    else
+    {
+        Debug.LogWarning("❌ No additional prefab assigned.");
+    }
+}
+
 }
