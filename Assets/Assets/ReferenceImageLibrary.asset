@@ -18,12 +18,32 @@ MonoBehaviour:
     m_Storage: []
   m_Images:
   - m_SerializedGuid:
-      m_GuidLow: 4669899616624506839
-      m_GuidHigh: 14745549596963190415
+      m_GuidLow: 4744323674136794026
+      m_GuidHigh: 239853913700872068
+    m_SerializedTextureGuid:
+      m_GuidLow: 16119602196578137548
+      m_GuidHigh: 5119894441438008313
+    m_Size: {x: 0, y: 0}
+    m_SpecifySize: 0
+    m_Name: augmented-images-earth
+    m_Texture: {fileID: 2800000, guid: dfa575cc54cadfb4f9d3683dde840d47, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5616869340087652192
+      m_GuidHigh: 14320923339378160042
+    m_SerializedTextureGuid:
+      m_GuidLow: 8238265981562430023
+      m_GuidHigh: 10091017399087696650
+    m_Size: {x: 0, y: 0}
+    m_SpecifySize: 0
+    m_Name: TargetTracker
+    m_Texture: {fileID: 2800000, guid: 1436a247334372540a8be826dc7e0a8c, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 4997730913891469477
+      m_GuidHigh: 1230299978765399983
     m_SerializedTextureGuid:
       m_GuidLow: 16430241910255274575
       m_GuidHigh: 3143750354108030859
     m_Size: {x: 0, y: 0}
     m_SpecifySize: 0
     m_Name: unitylogowhiteonblack
-    m_Texture: {fileID: 0}
+    m_Texture: {fileID: 2800000, guid: 5a804a4ff1f7e4038b1f1e6f4ad8a02b, type: 3}

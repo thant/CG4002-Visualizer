@@ -17,6 +17,8 @@ public class ARLaserTagUI : MonoBehaviour
     public Image enemyShieldCooldown;
     public Image[] playerBombIcons;  // Array to hold 2 bomb icons for the player
     public Image[] enemyBombIcons;   // Array to hold 2 bomb icons for the enemy
+    public Image shieldOverlay;  // Reference to the blue shield overlay
+
 
     public Button shootButton;
     public Button reloadButton;
@@ -69,6 +71,17 @@ public class ARLaserTagUI : MonoBehaviour
         gameCanvas.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1920, 1080);
         gameCanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
 
+        if (shieldOverlay != null)
+    {
+        RectTransform rt = shieldOverlay.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;  // Bottom-left
+        rt.anchorMax = Vector2.one;   // Top-right
+        rt.offsetMin = Vector2.zero;  // No offset
+        rt.offsetMax = Vector2.zero;  // No offset
+    }
+
+
+
         UpdateUI();
 
         shieldDepletionRate = 1f / shieldHealth;
@@ -105,6 +118,7 @@ public class ARLaserTagUI : MonoBehaviour
                 if (isEnemyShieldActive)
                 {
                     // Block damage with enemy's shield if it's active
+                    ShieldSparks();
                     int damageToShield = 5;
 
                     // If the enemy's shield can absorb all damage
@@ -140,43 +154,43 @@ public class ARLaserTagUI : MonoBehaviour
     }
 
     void TakeHit()
+{
+    if (playerHealth > 0)
     {
-        if (playerHealth > 0)
+        // If player's shield is active, absorb damage with the shield
+        if (isPlayerShieldActive)
         {
-            // If player's shield is active, absorb damage with the shield
-            if (isPlayerShieldActive)
-            {
-                int damageToShield = 10;
+            int damageToShield = 10;
 
-                // If the player's shield can absorb all damage
-                if (playerShieldHealth >= damageToShield)
+            // If the player's shield can absorb all damage
+            if (playerShieldHealth >= damageToShield)
+            {
+                playerShieldHealth -= damageToShield;
+                if (playerShieldHealth == 0)
                 {
-                    playerShieldHealth -= damageToShield;
-                    if (playerShieldHealth == 0){
-                        isPlayerShieldActive = false;
-                    }
-                    Debug.Log("Player Shield Health: " + playerShieldHealth);
-                }
-                else
-                {
-                    // If the shield is depleted, apply the remainder damage to player health
-                    int remainingDamage = damageToShield - playerShieldHealth;
-                    playerHealth -= remainingDamage;
-                    playerShieldHealth = 0;
-                    isPlayerShieldActive = false;  // Shield deactivated
-                    Debug.Log("Player Health after shield depleted: " + playerHealth);
+                    isPlayerShieldActive = false;
+                    shieldOverlay.enabled = false;  // Hide the blue shield overlay when shield is depleted
                 }
             }
             else
             {
-                // If no shield, damage the player's health directly
-                playerHealth -= 10;
-                Debug.Log("Player Health: " + playerHealth);
+                // If the shield is depleted, apply the remainder damage to player health
+                int remainingDamage = damageToShield - playerShieldHealth;
+                playerHealth -= remainingDamage;
+                playerShieldHealth = 0;
+                isPlayerShieldActive = false;  // Shield deactivated
+                shieldOverlay.enabled = false;  // Hide the blue shield overlay
             }
-
-            UpdateUI();
         }
+        else
+        {
+            // If no shield, damage the player's health directly
+            playerHealth -= 10;
+        }
+
+        UpdateUI();
     }
+}
 
     void LaunchBadmintonAttack()
 {
@@ -393,16 +407,17 @@ void LaunchGolfAttack()
     }
 
     void ActivateShield()
+{
+    if (playerShieldCount > 0 && !isPlayerShieldActive)
     {
-        if (playerShieldCount > 0 && !isPlayerShieldActive)
-        {
-            playerShieldHealth = 30;
-            isPlayerShieldActive = true;  // Activate the player's shield
-            playerShieldCooldown.fillAmount = 1f; // Set the shield to full
-            playerShieldCount--;
-            playerShieldText.text = "Shield: " + playerShieldCount; // Update the text immediately
-        }
+        playerShieldHealth = 30;
+        isPlayerShieldActive = true;  // Activate the player's shield
+        shieldOverlay.enabled = true;  // Show the blue shield overlay
+        playerShieldCooldown.fillAmount = 1f;
+        playerShieldCount--;
+        playerShieldText.text = "Shield: " + playerShieldCount; // Update the text immediately
     }
+}
 
     void ActivateEnemyShield()
     {
@@ -478,19 +493,6 @@ void LaunchGolfAttack()
     enemyAmmoText.text = "Enemy Ammo: " + enemyAmmo;
     enemyShieldText.text = "Enemy Shield: " + enemyShieldCount;
 
-    // Update the player's shield cooldown based on the remaining shield health
-    if (playerShieldHealth > 0)
-    {
-        playerShieldCooldown.fillAmount = (float)playerShieldHealth / 30f;  // 30 is the maximum shield health
-    }
-    else
-    {
-        playerShieldCooldown.fillAmount = 0f;  // No shield left
-    }
-
-    // Update the enemy shield cooldown (based on enemy's shield health)
-    enemyShieldCooldown.fillAmount = (float)enemyShieldHealth / 30f;  // Assuming 30 is max enemy shield health
-
     // Update the bomb icons for the player
     for (int i = 0; i < playerBombIcons.Length; i++)
     {
@@ -504,6 +506,16 @@ void LaunchGolfAttack()
         }
     }
 
+    if (playerShieldHealth > 0)
+    {
+        playerShieldCooldown.fillAmount = (float)playerShieldHealth / 30f;  // 30 is the maximum shield health
+    }
+    else
+    {
+        playerShieldCooldown.fillAmount = 0f;  // No shield left
+    }
+    // Update the enemy shield cooldown (based on enemy's shield health)
+    enemyShieldCooldown.fillAmount = (float)enemyShieldHealth / 30f;
     // Update the bomb icons for the enemy
     for (int i = 0; i < enemyBombIcons.Length; i++)
     {

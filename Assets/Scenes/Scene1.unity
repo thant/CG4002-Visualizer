@@ -1144,14 +1144,14 @@ RectTransform:
   m_GameObject: {fileID: 351174998}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3.5369, y: 3.5369, z: 3.5369}
+  m_LocalScale: {x: 1.0358518, y: 1.0358518, z: 1.0358518}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 945534682}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 959, y: -178}
+  m_AnchoredPosition: {x: 370, y: 175}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &412071538
@@ -2345,6 +2345,81 @@ RectTransform:
   m_AnchoredPosition: {x: 1752, y: -60}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &696010942
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 696010945}
+  - component: {fileID: 696010944}
+  - component: {fileID: 696010943}
+  m_Layer: 5
+  m_Name: ShieldVisual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &696010943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 696010942}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.23629406, g: 0.7690623, b: 0.8490566, a: 0.043137256}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &696010944
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 696010942}
+  m_CullTransparentMesh: 1
+--- !u!224 &696010945
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 696010942}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 19.17988, y: 9.756731, z: 3.7147274}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 824640142}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -1.5}
+  m_SizeDelta: {x: -1820, y: -873}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &699327885
 GameObject:
   m_ObjectHideFlags: 0
@@ -2780,6 +2855,7 @@ MonoBehaviour:
   enemyBombIcons:
   - {fileID: 1161800121}
   - {fileID: 580733817}
+  shieldOverlay: {fileID: 696010943}
   shootButton: {fileID: 463643002}
   reloadButton: {fileID: 2126126514}
   shieldButton: {fileID: 2096079520}
@@ -2889,6 +2965,7 @@ RectTransform:
   - {fileID: 1487895949}
   - {fileID: 675886507}
   - {fileID: 2126126517}
+  - {fileID: 696010945}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -5425,9 +5502,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48987d4a7eee5644b8aa611a2c09de0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  golfBallPrefab: {fileID: 6942355483193693256, guid: 3610390811a492948b7c1fdaca7ef2b8,
+  golfBallPrefab: {fileID: 1623967730226690414, guid: 2e1c2b9be0d4c57418e41a0b8967b6c4,
     type: 3}
-  smallGolfBallPrefab: {fileID: 6942355483193693256, guid: a3030df119a966b46af5c0ad4d6e4336,
+  smallGolfBallPrefab: {fileID: 1044182865486163647, guid: b215bfc4a5bc9c44eb1effe4da459c69,
     type: 3}
   golfClubPrefab: {fileID: 919132149155446097, guid: 98767c7bafeccd7498e19352f9afb3f0,
     type: 3}
