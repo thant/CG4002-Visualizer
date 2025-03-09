@@ -5,7 +5,7 @@ using UnityEngine.XR.ARSubsystems;
 public class ImageTrackingHandler : MonoBehaviour
 {
     public GameObject targetObject; // The GameObject to update with tracked image position
-    public GameObject targetFlag;   // The empty GameObject that acts as a flag (true/false)
+    public GameObject targetFlag;   // The empty GameObject that acts as a visiblity
     private ARTrackedImageManager imageManager;
     private ARTrackedImage currentTrackedImage;
     private Vector3 targetPosition;

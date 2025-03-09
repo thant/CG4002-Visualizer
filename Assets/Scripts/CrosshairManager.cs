@@ -27,7 +27,7 @@ public class CrosshairManager : MonoBehaviour
         if (crosshairPrefab != null && targetPosition != null)
         {
             // Define the desired rotation (in this case, -90 on X, 90 on Y, 0 on Z)
-            Quaternion rotation = Quaternion.Euler(-90f, 90f, 0f);
+            Quaternion rotation = Quaternion.Euler(-90, 0f, 0f);
 
             // Spawn the crosshair with the specified rotation
             activeCrosshair = Instantiate(crosshairPrefab, targetPosition.transform.position, rotation);

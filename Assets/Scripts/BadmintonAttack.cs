@@ -3,34 +3,30 @@ using System.Collections;
 
 public class BadmintonAttack : MonoBehaviour
 {
-    public GameObject shuttlecockPrefab;        // Regular shuttlecock prefab
-    public GameObject smallShuttlecockPrefab;   // Smaller shuttlecock prefab for close targets
-    public float attackSpeed = 15f;             // Speed at which the shuttlecock flies
-    public float arcHeight = 2f;                // Base height of the arc
-    public float forwardMultiplier = 1.5f;     // Multiplier to make the shuttlecock travel further
+    public GameObject shuttlecockPrefab;        //shuttlecock prefab
+    public GameObject smallShuttlecockPrefab;   //Smaller shuttlecock prefab for close targets
+    public float attackSpeed = 15f;             //Speed at which the shuttlecock flies
+    public float arcHeight = 2f;                //Base height of the arc
+    public float forwardMultiplier = 1.5f;     //Multiplier to make the shuttlecock travel further
 
     public GameObject targetPositionObject;    // External reference to target position GameObject
     public GameObject isTargetVisible;         // Flag to check if the target is visible (tracked)
 
-    public GameObject spawnPrefabOnHit;        // Prefab to spawn after shuttlecock reaches the target
+    public GameObject spawnPrefabOnHit;        // hit vfx
 
     void Start()
     {
-        // Any initialization code if needed
     }
-
-    // This method will be triggered when the button is clicked to launch the badminton attack
     public void LaunchBadmintonAttack()
     {
-        // Get the camera's forward direction (where the camera is facing)
+        // Get the camera's forward direction
         Vector3 cameraForward = Camera.main.transform.forward;
         Vector3 cameraRight = Camera.main.transform.right; // Get the camera's right direction
 
-        // Calculate spawn position at the middle right of the camera's view
-        Vector3 spawnPosition = Camera.main.transform.position + cameraRight * 0.2f; // Offset to the right
+        // spawn position at the middle right of the camera's view
+        Vector3 spawnPosition = Camera.main.transform.position + cameraRight * 0.2f;
         spawnPosition.y -= 0.2f;
 
-        // Log spawn position for debugging
         Debug.Log("Shuttlecock spawn position: " + spawnPosition);
 
         // Determine if the target is close
@@ -67,21 +63,17 @@ public class BadmintonAttack : MonoBehaviour
             direction = cameraForward;  // Fly straight forward relative to the camera
             direction.y = arcHeight;    // Add the upward arc effect
         }
-
-        // Start the shuttlecock's movement towards the target using Lerp
         StartCoroutine(MoveShuttlecockToTarget(shuttlecock, spawnPosition, direction, isTargetClose));
     }
 
     private Vector3 GetTargetPosition(out bool isTargetClose)
     {
-        isTargetClose = false; // Default to "not close"
+        isTargetClose = false; // Default to not close
         Vector3 targetPosition = Vector3.zero;
 
         if (isTargetVisible.activeSelf && targetPositionObject != null)
         {
             targetPosition = targetPositionObject.transform.position;
-
-            // Check the distance to the target to decide if it's close
             float distance = Vector3.Distance(Camera.main.transform.position, targetPosition);
             if (distance < 2f)  // Threshold distance for "close" (can adjust)
             {
@@ -94,7 +86,7 @@ public class BadmintonAttack : MonoBehaviour
 
     private IEnumerator MoveShuttlecockToTarget(GameObject shuttlecock, Vector3 spawnPosition, Vector3 direction, bool isTargetClose)
     {
-        float duration = 2f; // Default duration of the movement (adjust as needed)
+        float duration = 2f; // Default duration of the movement
         if (isTargetClose)
         {
             duration = 1f; // Faster move if target is close
@@ -108,22 +100,18 @@ public class BadmintonAttack : MonoBehaviour
         {
             shuttlecock.transform.position = Vector3.Lerp(startPosition, startPosition + direction, elapsedTime / duration);
 
-            // Spin the shuttlecock about its axis (e.g., Z-axis)
+            // Shuttlecock spin on its axis
             shuttlecock.transform.Rotate(Vector3.forward * 360 * Time.deltaTime / duration, Space.Self); // Rotation around Z-axis
             shuttlecock.transform.Rotate(Vector3.up * 360 * Time.deltaTime / duration, Space.Self); // Rotation around Y-axis
 
             elapsedTime += Time.deltaTime;
-
-            // Wait until the next frame
             yield return null;
         }
 
-        // After the shuttlecock reaches the target, spawn the prefab at the target position
+        // After the shuttlecock reaches the target, spawn vfx
         Vector3 targetPosition = startPosition + direction;
         SpawnPrefabAtTarget(targetPosition);
-
-        // Destroy the shuttlecock after the movement is complete
-        Destroy(shuttlecock, 0.5f); // Adjust time as necessary to let the shuttlecock disappear
+        Destroy(shuttlecock, 0.5f);
     }
 
     private void SpawnPrefabAtTarget(Vector3 position)
@@ -134,7 +122,7 @@ public class BadmintonAttack : MonoBehaviour
             // Spawn the prefab at the target position
             GameObject spawnedObject = Instantiate(spawnPrefabOnHit, position, Quaternion.identity);
             
-            // Check if the spawned object has a ParticleSystem to play
+            // Check if the spawned object has a ParticleSystem to play (vfx)
             ParticleSystem ps = spawnedObject.GetComponent<ParticleSystem>();
             if (ps != null)
             {

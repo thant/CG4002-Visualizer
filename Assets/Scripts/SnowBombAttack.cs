@@ -14,29 +14,27 @@ public class SnowBombAttack : MonoBehaviour
 
     void Awake()
     {
-        // Get the flag GameObject (make sure it has been set in the inspector)
-        targetFlag = trackingTarget.transform.Find("TargetFlag").gameObject;
-
-        if (targetFlag == null)
-        {
-            Debug.LogError("❌ No TargetFlag found under trackingTarget.");
-        }
     }
 
     public void LaunchSnowbomb()
     {
         // Check if the target flag is active (i.e., a valid target exists)
-        if (targetFlag == null || !targetFlag.activeSelf)
+        if (!targetFlag.activeSelf)
         {
-            Debug.Log("No valid target for Snowbomb!");
+            Debug.Log("No valid target for Snowbomb, launching forward without target.");
+
+            // Use a default target when there's no valid target (launch forward from the camera)
+            Vector3 defaultTargetPosition = Camera.main.transform.position + Camera.main.transform.forward * 10f;
+            GameObject snowbomb = Instantiate(snowbombPrefab, Camera.main.transform.position, Quaternion.identity);
+            StartCoroutine(MoveSnowbomb(snowbomb, defaultTargetPosition)); // Move to the default target
             return;
         }
 
         // Access the target position from the trackingTarget (which should be set by ImageTrackingHandler)
         Vector3 targetPosition = trackingTarget.transform.position;
 
-        GameObject snowbomb = Instantiate(snowbombPrefab, Camera.main.transform.position, Quaternion.identity);
-        StartCoroutine(MoveSnowbomb(snowbomb, targetPosition));
+        GameObject snowbombWithTarget = Instantiate(snowbombPrefab, Camera.main.transform.position, Quaternion.identity);
+        StartCoroutine(MoveSnowbomb(snowbombWithTarget, targetPosition)); // Move towards the actual target
     }
 
     private IEnumerator MoveSnowbomb(GameObject snowbomb, Vector3 target)
@@ -53,8 +51,17 @@ public class SnowBombAttack : MonoBehaviour
         }
 
         Destroy(snowbomb); // Destroy the snowbomb after it reaches the target
-        SpawnSnowfall(target); // Spawn snowfall at the target position
-        SpawnAdditionalPrefab(target); // Spawn the additional prefab after snowbomb despawns
+
+        // Only spawn snowfall and additional prefab if there's a valid target
+        if (targetFlag != null && targetFlag.activeSelf)
+        {
+            SpawnSnowfall(target); // Spawn snowfall at the target position
+            SpawnAdditionalPrefab(target); // Spawn the additional prefab after snowbomb despawns
+        }
+        else
+        {
+            Debug.Log("No target to spawn snowfall.");
+        }
     }
 
     private void SpawnSnowfall(Vector3 position)
@@ -69,28 +76,27 @@ public class SnowBombAttack : MonoBehaviour
     }
 
     private void SpawnAdditionalPrefab(Vector3 position)
-{
-    if (additionalPrefab != null)
     {
-        GameObject spawnedObject = Instantiate(additionalPrefab, position, Quaternion.identity);
-        ParticleSystem ps = spawnedObject.GetComponent<ParticleSystem>();
-
-        if (ps != null)
+        if (additionalPrefab != null)
         {
-            ps.Play(); // Manually start the particle effect
-            Destroy(spawnedObject, ps.main.duration + ps.main.startLifetime.constantMax); // Destroy after effect ends
+            GameObject spawnedObject = Instantiate(additionalPrefab, position, Quaternion.identity);
+            ParticleSystem ps = spawnedObject.GetComponent<ParticleSystem>();
+
+            if (ps != null)
+            {
+                ps.Play(); // Manually start the particle effect
+                Destroy(spawnedObject, ps.main.duration + ps.main.startLifetime.constantMax); // Destroy after effect ends
+            }
+            else
+            {
+                Destroy(spawnedObject, 5f); // Fallback destroy after 5 seconds
+            }
+
+            Debug.Log("✅ Additional prefab spawned and manually started at: " + position);
         }
         else
         {
-            Destroy(spawnedObject, 5f); // Fallback destroy after 5 seconds
+            Debug.LogWarning("❌ No additional prefab assigned.");
         }
-
-        Debug.Log("✅ Additional prefab spawned and manually started at: " + position);
     }
-    else
-    {
-        Debug.LogWarning("❌ No additional prefab assigned.");
-    }
-}
-
 }
