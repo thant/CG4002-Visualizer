@@ -5858,7 +5858,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1872395158}
-  - component: {fileID: 1872395157}
+  - component: {fileID: 1872395159}
   m_Layer: 0
   m_Name: MQTTHandler
   m_TagString: Untagged
@@ -5866,27 +5866,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1872395157
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1872395156}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a07e1522ea617e546ad6df6d7f2a0bdc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  brokerAddress: broker.emqx.io
-  brokerPort: 8883
-  isEncrypted: 0
-  certificateName: 
-  connectionDelay: 500
-  timeoutOnConnection: 30000
-  autoConnect: 0
-  mqttUserName: 
-  mqttPassword: 
 --- !u!4 &1872395158
 Transform:
   m_ObjectHideFlags: 0
@@ -5902,6 +5881,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1872395159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872395156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbaa80705124f9e439d56ca6d5e6db69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  brokerAddress: broker.emqx.io
+  brokerPort: 8883
+  isEncrypted: 0
+  certificateName: 
+  connectionDelay: 500
+  timeoutOnConnection: 30000
+  autoConnect: 1
+  mqttUserName: 
+  mqttPassword: 
+  autoTest: 0
+  consoleInputField: {fileID: 0}
+  encryptedToggle: {fileID: 0}
+  addressInputField: {fileID: 0}
+  portInputField: {fileID: 0}
+  connectButton: {fileID: 0}
+  disconnectButton: {fileID: 0}
+  testPublishButton: {fileID: 0}
+  clearButton: {fileID: 0}
+  arLaserTagUI: {fileID: 824640138}
 --- !u!1 &2038829959
 GameObject:
   m_ObjectHideFlags: 0

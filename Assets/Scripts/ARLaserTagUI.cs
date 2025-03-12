@@ -211,6 +211,38 @@ public class ARLaserTagUI : MonoBehaviour
     }
 }
 
+ public void UpdatePlayerStats(int hp, int bullets, int shieldHp)
+    {
+        this.playerHealth = hp;
+        this.ammo = bullets;
+        this.playerShieldHealth = shieldHp;
+    }
+
+public void UpdateAction(string action)
+{
+        if (action == "badminton"){
+            LaunchBadmintonAttack();
+        }
+        else if (action == "boxing"){
+            LaunchBoxingAttack();
+        }
+        else if (action == "fencing"){
+            LaunchFencingAttack();
+        }
+        else if (action == "snowball"){
+            LaunchSnowBombAttack();
+        }
+        else if (action == "golf"){
+            LaunchGolfAttack();
+        }
+        else if (action == "reload"){
+            Reload();
+        }
+        else if (action == "shield"){
+            ActivateShield();
+        }
+}
+
 void LaunchBoxingAttack()
 {
     boxingAttack.LaunchBoxingAttack();

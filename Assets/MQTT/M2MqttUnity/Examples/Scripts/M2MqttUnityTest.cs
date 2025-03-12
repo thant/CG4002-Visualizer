@@ -32,11 +32,16 @@ using uPLibrary.Networking.M2Mqtt.Messages;
 using M2MqttUnity;
 
 
+
+
 /// <summary>
 /// Examples for the M2MQTT library (https://github.com/eclipse/paho.mqtt.m2mqtt),
 /// </summary>
 namespace M2MqttUnity.Examples
 {
+    using Newtonsoft.Json;
+
+
     /// <summary>
     /// Script for testing M2MQTT with a Unity UI
     /// </summary>
@@ -84,6 +89,7 @@ namespace M2MqttUnity.Examples
         public Button disconnectButton;
         public Button testPublishButton;
         public Button clearButton;
+        public ARLaserTagUI arLaserTagUI;
 
         public const string MQTT_TOPIC = "cg4002_b15";
 
@@ -249,20 +255,28 @@ namespace M2MqttUnity.Examples
         protected override void DecodeMessage(string topic, byte[] message)
         {
             string msg = System.Text.Encoding.UTF8.GetString(message);
+
+            // Log the received message for debugging purposes
+            Debug.Log($"Received message on topic '{topic}': {msg}");
+
             JsonUtility.FromJsonOverwrite(msg, currSendMessage);
+
             if (currSendMessage.topic != "visualiser/mqtt_server")
             {
-               StoreMessage(msg);
+             StoreMessage(msg);
             }
+
             if (topic == MQTT_TOPIC)
             {
                 if (autoTest)
-                {
-                    autoTest = false;
-                    Disconnect();
-                }
+                    {
+                        autoTest = false;
+                        Disconnect();
+                    }
             }
+            ProcessMessage(msg);
         }
+
 
         private void StoreMessage(string eventMsg)
         {
@@ -270,14 +284,61 @@ namespace M2MqttUnity.Examples
         }
 
         private void ProcessMessage(string msg)
-        {
-            AddUiMessage("Received: " + msg);
-            JsonUtility.FromJsonOverwrite(msg, currReceiveMessage);
-            if (currReceiveMessage.message == "bomb")
-            {
-                PublishMessage("bomb");
-            }
-        }
+{
+    // Add raw message to the UI for debugging
+    AddUiMessage("Received: " + msg);
+
+    // Extract the 'message' field manually (it is a nested JSON object)
+    string messagePart = ExtractJsonField(msg, "message");
+    if (messagePart != null)
+    {
+        // Extract values from the 'message' field
+        int hp = ExtractIntField(messagePart, "hp");
+        int bullets = ExtractIntField(messagePart, "bullets");
+        int shieldHp = ExtractIntField(messagePart, "shieldHp");
+        string action = ExtractStringField(messagePart, "action");
+
+        // Update UI with extracted stats
+        arLaserTagUI.UpdatePlayerStats(hp, bullets, shieldHp);
+
+        // Update action
+        arLaserTagUI.UpdateAction(action);
+    }
+}
+
+// Helper method to extract the value of a JSON field (as string)
+private string ExtractJsonField(string json, string field)
+{
+    string pattern = $"\"{field}\":";
+    int startIndex = json.IndexOf(pattern);
+    if (startIndex == -1) return null; // Field not found
+
+    startIndex += pattern.Length;
+    int endIndex = json.IndexOf("}", startIndex);
+    if (endIndex == -1) endIndex = json.IndexOf(",", startIndex);
+
+    // If no comma is found, ensure that we read until the closing curly brace
+    if (endIndex == -1) endIndex = json.Length;
+
+    return json.Substring(startIndex, endIndex - startIndex).Trim();
+}
+
+// Helper method to extract an integer value from the JSON field
+private int ExtractIntField(string json, string field)
+{
+    string value = ExtractJsonField(json, field);
+    return int.TryParse(value, out int result) ? result : 0;
+}
+
+// Helper method to extract a string value from the JSON field
+private string ExtractStringField(string json, string field)
+{
+    string value = ExtractJsonField(json, field);
+    return value != null ? value.Trim('"') : null;
+}
+
+
+
 
         protected override void Update()
         {
@@ -286,7 +347,7 @@ namespace M2MqttUnity.Examples
             {
                 foreach (string msg in eventMessages)
                 {
-                    ProcessMessage(msg);
+                   //ProcessMessage(msg);
                 }
                 eventMessages.Clear();
             }

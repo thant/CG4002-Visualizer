@@ -33,6 +33,7 @@ using uPLibrary.Networking.M2Mqtt.Exceptions;
 using uPLibrary.Networking.M2Mqtt.Session;
 using uPLibrary.Networking.M2Mqtt.Internal;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 /// <summary>
 /// Adaptation for Unity of the M2MQTT library (https://github.com/eclipse/paho.mqtt.m2mqtt),
@@ -196,8 +197,11 @@ namespace M2MqttUnity
         /// </summary>
         protected virtual void DecodeMessage(string topic, byte[] message)
         {
+            string receivedMessage = Encoding.UTF8.GetString(message);
             Debug.LogFormat("Message received on topic: {0}", topic);
         }
+
+        
 
         /// <summary>
         /// Override this method to take some actions when disconnected.
