@@ -1,3 +1,4 @@
+using M2MqttUnity.Examples;
 using UnityEngine;
 
 public class CrosshairManager : MonoBehaviour
@@ -8,6 +9,7 @@ public class CrosshairManager : MonoBehaviour
 
     void OnEnable()
     {
+        GameObject.Find("MQTTHandler").GetComponent<M2MqttUnityTest>().Visibility(1);
         // Check if the target position is assigned before spawning the crosshair
         if (targetPosition != null && crosshairPrefab != null)
         {
@@ -17,7 +19,8 @@ public class CrosshairManager : MonoBehaviour
 
     void OnDisable()
     {
-        // When the InView GameObject is disabled, destroy the crosshair
+        GameObject.Find("collisionchecker").GetComponent<Flipflop>().SetActiveState(0);
+        GameObject.Find("MQTTHandler").GetComponent<M2MqttUnityTest>().Visibility(0);
         DestroyCrosshair();
     }
 

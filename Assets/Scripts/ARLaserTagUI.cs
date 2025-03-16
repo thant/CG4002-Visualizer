@@ -211,12 +211,27 @@ public class ARLaserTagUI : MonoBehaviour
     }
 }
 
- public void UpdatePlayerStats(int hp, int bullets, int shieldHp)
-    {
-        this.playerHealth = hp;
-        this.ammo = bullets;
-        this.playerShieldHealth = shieldHp;
-    }
+public void UpdatePlayerStats(int hp, int bullets, int shieldHp, int shields, int bombs)
+{
+    this.playerHealth = hp;
+    this.ammo = bullets;
+    this.playerShieldHealth = shieldHp;
+    this.playerShieldCount = shields;
+    this.playerbomb = bombs;
+
+    UpdateUI();
+}
+
+public void UpdateOpponentStats(int hp, int bullets, int shieldHp, int shields, int bombs)
+{
+    this.enemyHealth = hp;
+    this.enemyAmmo = bullets;
+    this.enemyShieldHealth = shieldHp;
+    this.enemyShieldCount = shields;
+    this.enemybomb = bombs;
+
+    UpdateUI();
+}
 
 public void UpdateAction(string action)
 {

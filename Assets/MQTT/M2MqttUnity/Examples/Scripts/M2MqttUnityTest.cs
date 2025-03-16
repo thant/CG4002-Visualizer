@@ -76,6 +76,7 @@ namespace M2MqttUnity.Examples
 
     // Usage Example
 
+
     public class M2MqttUnityTest : M2MqttUnityClient
     {
         [Tooltip("Set this to true to perform a testing cycle automatically on startup")]
@@ -99,21 +100,32 @@ namespace M2MqttUnity.Examples
         private SendMessageData currSendMessage = new ();
         private ReceiveMessageData currReceiveMessage = new ();
 
-        public void PublishMessage(string input="")
-        {
-            SendMessageData player = new()
-            {
-                topic = "visualiser/mqtt_server",
-                playerId = "1",
-                action = input,
-                seeOpponent = 1
-            };
-            var message = JsonUtility.ToJson(player);
-            Debug.Log(message);
-            client.Publish(MQTT_TOPIC, System.Text.Encoding.UTF8.GetBytes(message), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
-            Debug.Log("Test message published");
-            AddUiMessage("Message published.");
-        }
+        public void PublishMessage(string action = "", int isActive = 0, int isVisible = 0)
+{
+    // Create a new message with the given data
+    SendMessageData player = new()
+    {
+        topic = "visualiser/mqtt_server",
+        playerId = "1",
+        action = action,
+        seeOpponent = 1
+    };
+
+    // Prepare the message with isActive and isVisible included
+    var messageData = new
+    {
+        isActive,
+        isVisible
+    };
+
+    string messageJson = JsonUtility.ToJson(messageData);
+    Debug.Log(messageJson);
+
+    // Publish the message
+    client.Publish(MQTT_TOPIC, System.Text.Encoding.UTF8.GetBytes(messageJson), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
+    AddUiMessage("Message published.");
+}
+
 
         public void SetBrokerAddress(string brokerAddress)
         {
@@ -252,30 +264,51 @@ namespace M2MqttUnity.Examples
             base.Start();
         }
 
-        protected override void DecodeMessage(string topic, byte[] message)
+        public int isVisible;
+
+
+        public void Visibility(int newvalue)
         {
-            string msg = System.Text.Encoding.UTF8.GetString(message);
-
-            // Log the received message for debugging purposes
-            Debug.Log($"Received message on topic '{topic}': {msg}");
-
-            JsonUtility.FromJsonOverwrite(msg, currSendMessage);
-
-            if (currSendMessage.topic != "visualiser/mqtt_server")
-            {
-             StoreMessage(msg);
-            }
-
-            if (topic == MQTT_TOPIC)
-            {
-                if (autoTest)
-                    {
-                        autoTest = false;
-                        Disconnect();
-                    }
-            }
-            ProcessMessage(msg);
+            isVisible = newvalue;
         }
+
+        protected override void DecodeMessage(string topic, byte[] message)
+{
+    string msg = System.Text.Encoding.UTF8.GetString(message);
+
+    // If the message is empty or doesn't have expected data, skip it.
+    if (string.IsNullOrEmpty(msg) || msg == "{}")
+    {
+        Debug.Log("Received empty message, skipping.");
+        return; // Exit the method early
+    }
+
+    // Log the received message for debugging purposes
+    Debug.Log($"Received message on topic '{topic}': {msg}");
+
+    JsonUtility.FromJsonOverwrite(msg, currSendMessage);
+
+    // Check if the topic matches the expected ones
+    if (currSendMessage.topic != "visualiser/mqtt_server")
+    {
+        StoreMessage(msg);
+    }
+
+    if (topic == MQTT_TOPIC)
+    {
+        if (autoTest)
+        {
+            autoTest = false;
+            Disconnect();
+        }
+    }
+
+    ProcessMessage(msg);
+}
+
+
+
+ private readonly int currID = 1;
 
 
         private void StoreMessage(string eventMsg)
@@ -283,28 +316,57 @@ namespace M2MqttUnity.Examples
             eventMessages.Add(eventMsg);
         }
 
-        private void ProcessMessage(string msg)
-{
-    // Add raw message to the UI for debugging
-    AddUiMessage("Received: " + msg);
-
-    // Extract the 'message' field manually (it is a nested JSON object)
-    string messagePart = ExtractJsonField(msg, "message");
-    if (messagePart != null)
+    private void ProcessMessage(string msg)
+        {
+            // Add raw message to the UI for debugging
+            AddUiMessage("Received: " + msg);
+            string temptopic = ExtractJsonField(msg, "topic").Split(",")[0].Trim('"');
+            if (temptopic == "client/visualiser/action")
+                {
+                    string messagePart = ExtractJsonField(msg, "message");
+                    string action = ExtractStringField(messagePart, "action");
+                    arLaserTagUI.UpdateAction(action);
+                    int isActive = GameObject.Find("collisionchecker").GetComponent<Flipflop>().isActive;
+                    PublishMessage("", isActive, isVisible);
+                    Debug.Log($"Published isActive: {isActive}, isVisible: {isVisible}");
+                }
+            else if (temptopic == "client/visualiser/gamestate")
     {
-        // Extract values from the 'message' field
-        int hp = ExtractIntField(messagePart, "hp");
-        int bullets = ExtractIntField(messagePart, "bullets");
-        int shieldHp = ExtractIntField(messagePart, "shieldHp");
-        string action = ExtractStringField(messagePart, "action");
+    string p1Data = ExtractJsonField(msg, "p1");
+    string p2Data = ExtractJsonField(msg, "p2");
 
-        // Update UI with extracted stats
-        arLaserTagUI.UpdatePlayerStats(hp, bullets, shieldHp);
-
-        // Update action
-        arLaserTagUI.UpdateAction(action);
+    if (p1Data == null || p2Data == null)
+    {
+        Debug.LogError("Invalid player data in game state message.");
+        return;
     }
-}
+
+    // Extract values for Player 1
+    int p1Hp = ExtractIntField(p1Data, "hp");
+    int p1Bullets = ExtractIntField(p1Data, "bullets");
+    int p1Bombs = ExtractIntField(p1Data, "bombs");
+    int p1ShieldHp = ExtractIntField(p1Data, "shield_hp");
+    int p1Deaths = ExtractIntField(p1Data, "deaths");
+    int p1Shields = ExtractIntField(p1Data, "shields");
+
+    // Extract values for Player 2
+    int p2Hp = ExtractIntField(p2Data, "hp");
+    int p2Bullets = ExtractIntField(p2Data, "bullets");
+    int p2Bombs = ExtractIntField(p2Data, "bombs");
+    int p2ShieldHp = ExtractIntField(p2Data, "shield_hp");
+    int p2Deaths = ExtractIntField(p2Data, "deaths");
+    int p2Shields = ExtractIntField(p2Data, "shields");
+
+    if (currID == 1){
+        arLaserTagUI.UpdatePlayerStats(p1Hp, p1Bullets, p1ShieldHp, p1Shields, p1Bombs);
+        arLaserTagUI.UpdateOpponentStats(p2Hp, p2Bullets, p2ShieldHp, p2Shields, p2Bombs);
+    }
+    else{
+        arLaserTagUI.UpdateOpponentStats(p1Hp, p1Bullets, p1ShieldHp, p1Shields, p1Bombs);
+        arLaserTagUI.UpdatePlayerStats(p2Hp, p2Bullets, p2ShieldHp, p2Shields, p2Bombs);
+    }
+    }
+        }
 
 // Helper method to extract the value of a JSON field (as string)
 private string ExtractJsonField(string json, string field)
@@ -322,6 +384,10 @@ private string ExtractJsonField(string json, string field)
 
     return json.Substring(startIndex, endIndex - startIndex).Trim();
 }
+
+
+
+
 
 // Helper method to extract an integer value from the JSON field
 private int ExtractIntField(string json, string field)
