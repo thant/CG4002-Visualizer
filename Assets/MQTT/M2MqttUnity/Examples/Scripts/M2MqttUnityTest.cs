@@ -66,6 +66,8 @@ namespace M2MqttUnity.Examples
         public string playerId;
         public string action;
         public int seeOpponent;
+        internal int isActive;
+        internal int isVisible;
     };
 
     public class ReceiveMessageData
@@ -101,31 +103,20 @@ namespace M2MqttUnity.Examples
         private ReceiveMessageData currReceiveMessage = new ();
 
         public void PublishMessage(string action = "", int isActive = 0, int isVisible = 0)
-{
+        {
     // Create a new message with the given data
-    SendMessageData player = new()
-    {
+        SendMessageData player = new()
+        {
         topic = "visualiser/mqtt_server",
         playerId = "1",
         action = action,
-        seeOpponent = 1
-    };
-
-    // Prepare the message with isActive and isVisible included
-    var messageData = new
-    {
-        isActive,
-        isVisible
-    };
-
-    string messageJson = JsonUtility.ToJson(messageData);
-    Debug.Log(messageJson);
-
-    // Publish the message
-    client.Publish(MQTT_TOPIC, System.Text.Encoding.UTF8.GetBytes(messageJson), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
-    AddUiMessage("Message published.");
-}
-
+        isActive = isActive,
+        isVisible = isVisible,
+        };
+        var messageJson = JsonUtility.ToJson(player);
+        client.Publish(MQTT_TOPIC, System.Text.Encoding.UTF8.GetBytes(messageJson), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
+        AddUiMessage("Message published.");
+        }
 
         public void SetBrokerAddress(string brokerAddress)
         {

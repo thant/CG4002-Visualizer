@@ -244,7 +244,7 @@ public void UpdateAction(string action)
         else if (action == "fencing"){
             LaunchFencingAttack();
         }
-        else if (action == "snowball"){
+        else if (action == "bomb"){
             LaunchSnowBombAttack();
         }
         else if (action == "golf"){
