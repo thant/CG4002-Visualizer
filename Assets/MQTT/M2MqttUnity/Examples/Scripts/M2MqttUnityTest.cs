@@ -65,9 +65,8 @@ namespace M2MqttUnity.Examples
         public string topic;
         public string playerId;
         public string action;
-        public int seeOpponent;
-        internal int isActive;
-        internal int isVisible;
+        public int isActive;
+        public int isVisible;
     };
 
     public class ReceiveMessageData
@@ -102,18 +101,18 @@ namespace M2MqttUnity.Examples
         private SendMessageData currSendMessage = new ();
         private ReceiveMessageData currReceiveMessage = new ();
 
-        public void PublishMessage(string action = "", int isActive = 0, int isVisible = 0)
-        {
+        public void PublishMessage(string action = "", int isActive = 0, int isVisible = 0){
     // Create a new message with the given data
         SendMessageData player = new()
         {
-        topic = "visualiser/mqtt_server",
-        playerId = "1",
-        action = action,
-        isActive = isActive,
-        isVisible = isVisible,
+            topic = "visualiser/mqtt_server",
+            playerId = "1",
+            action = action,
+            isActive = isActive,
+            isVisible = isVisible,
         };
         var messageJson = JsonUtility.ToJson(player);
+        Debug.Log(messageJson);
         client.Publish(MQTT_TOPIC, System.Text.Encoding.UTF8.GetBytes(messageJson), MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, false);
         AddUiMessage("Message published.");
         }
@@ -258,6 +257,7 @@ namespace M2MqttUnity.Examples
         public int isVisible;
 
 
+
         public void Visibility(int newvalue)
         {
             isVisible = newvalue;
@@ -298,8 +298,11 @@ namespace M2MqttUnity.Examples
 }
 
 
+ public int currID = 1;
 
- private readonly int currID = 1;
+ public void setP2(){
+    this.currID = 2;
+    }
 
 
         private void StoreMessage(string eventMsg)
@@ -318,7 +321,7 @@ namespace M2MqttUnity.Examples
                     string action = ExtractStringField(messagePart, "action");
                     arLaserTagUI.UpdateAction(action);
                     int isActive = GameObject.Find("collisionchecker").GetComponent<Flipflop>().isActive;
-                    PublishMessage("", isActive, isVisible);
+                    PublishMessage(action, isActive, isVisible);
                     Debug.Log($"Published isActive: {isActive}, isVisible: {isVisible}");
                 }
             else if (temptopic == "client/visualiser/gamestate")

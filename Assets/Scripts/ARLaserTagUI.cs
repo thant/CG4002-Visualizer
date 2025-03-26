@@ -25,11 +25,13 @@ public class ARLaserTagUI : MonoBehaviour
     public Button badmintonButton;
     public Button boxingButton;
     public Button snowBombButton;
+    public Button setButton;
     public Button fencingButton;
     public Button golfButton;
     public SnowBombAttack snowBombAttack;
     public BadmintonAttack badmintonAttack;
     public BoxingAttack boxingAttack;
+    public GameObject mqttgameobj;
     public FencingAttack fencingAttack;
     public GolfAttack golfAttack;
     public Button hitButton;
@@ -60,7 +62,7 @@ public class ARLaserTagUI : MonoBehaviour
     void Start()
     {
         //button array for easy expansion
-        allButtons = new Button[] { shootButton, reloadButton, shieldButton, badmintonButton, boxingButton, snowBombButton, fencingButton, golfButton, hitButton };
+        allButtons = new Button[] { shootButton, reloadButton, shieldButton, badmintonButton, boxingButton, snowBombButton, fencingButton, golfButton, hitButton, setButton };
 
         //scaling UI to screen size
         gameCanvas.GetComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -80,6 +82,7 @@ public class ARLaserTagUI : MonoBehaviour
         shieldDepletionRate = 1f / shieldHealth;
         shootButton.onClick.AddListener(OnShootButtonPressed);
         reloadButton.onClick.AddListener(Reload);
+        setButton.onClick.AddListener(P2set);
         shieldButton.onClick.AddListener(ActivateShield);
         badmintonButton.onClick.AddListener(LaunchBadmintonAttack);
         boxingButton.onClick.AddListener(LaunchBoxingAttack);
@@ -222,6 +225,11 @@ public void UpdatePlayerStats(int hp, int bullets, int shieldHp, int shields, in
     UpdateUI();
 }
 
+public void P2set()
+{
+    mqttgameobj.GetComponent<M2MqttUnity.Examples.M2MqttUnityTest>().setP2();
+}
+
 public void UpdateOpponentStats(int hp, int bullets, int shieldHp, int shields, int bombs)
 {
     this.enemyHealth = hp;
@@ -256,6 +264,9 @@ public void UpdateAction(string action)
         else if (action == "shield"){
             ActivateShield();
         }
+        else if (action == "gun"){
+            OnShootButtonPressed();
+        }    
 }
 
 void LaunchBoxingAttack()
