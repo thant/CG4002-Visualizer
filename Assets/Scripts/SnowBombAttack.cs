@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.XR.ARFoundation;
 
 public class SnowBombAttack : MonoBehaviour
 {
@@ -12,8 +13,12 @@ public class SnowBombAttack : MonoBehaviour
 
     public GameObject targetFlag; // Reference to the target flag (set in the inspector)
 
+    private ARAnchorManager arAnchorManager; // Reference to the ARAnchorManager
+
     void Awake()
     {
+        // Get the ARAnchorManager from the AR Session Origin
+        arAnchorManager = FindObjectOfType<ARAnchorManager>();
     }
 
     public void LaunchSnowbomb()

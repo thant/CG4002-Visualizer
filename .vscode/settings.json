@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "CG4002-Visualizer.sln"
+    "dotnet.defaultSolution": "My project.sln"
 }

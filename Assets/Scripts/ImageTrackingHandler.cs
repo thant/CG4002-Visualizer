@@ -1,109 +1,124 @@
 using UnityEngine;
-using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.ARSubsystems;
+using Vuforia;
+using System.Collections;
 
-public class ImageTrackingHandler : MonoBehaviour
+public class ImageTrackingHandler : DefaultObserverEventHandler
 {
-    public GameObject targetObject; // The GameObject to update with tracked image position
-    public GameObject targetFlag;   // The empty GameObject that acts as a visiblity
-    private ARTrackedImageManager imageManager;
-    private ARTrackedImage currentTrackedImage;
-    private Vector3 targetPosition;
+    public GameObject targetObject;  // The object to update based on the tracked image position
+    public GameObject targetFlag;    // The flag to indicate the tracking status
 
-    void Awake()
+    private ImageTargetBehaviour imageTargetBehaviour;
+    public float scaleFactor = 10f; // Scaling factor for world space
+
+    // Parameters for position stabilization
+    public float positionStabilizationTime = 1f; // Time in seconds to check if the position has stabilized
+    public float positionChangeThreshold = 0.01f; // Minimum change in position to consider it "stabilized"
+
+    private CrosshairManager arrowprefab;
+
+    protected override void Start()
     {
-        imageManager = Object.FindFirstObjectByType<ARTrackedImageManager>();
-        if (imageManager == null)
+        base.Start();
+
+        imageTargetBehaviour = GetComponent<ImageTargetBehaviour>();
+
+        if (imageTargetBehaviour == null)
         {
-            Debug.LogError("❌ ARTrackedImageManager not found in the scene.");
+            Debug.LogError("❌ ImageTargetBehaviour not found. Make sure the script is attached to the Image Target.");
+            return;
+        }
+
+        imageTargetBehaviour.OnTargetStatusChanged += OnTargetStatusChanged;
+    }
+
+    private void OnTargetStatusChanged(ObserverBehaviour observerBehaviour, TargetStatus status)
+    {
+        if (status.Status == Status.TRACKED && status.StatusInfo == StatusInfo.NORMAL)
+        {
+            OnTrackingFound();
+        }
+        else
+        {
+            OnTrackingLost();
         }
     }
 
-    void OnEnable()
+    protected override void OnTrackingFound()
     {
-        if (imageManager != null)
-        {
-            imageManager.trackedImagesChanged += OnTrackedImagesChanged;
-        }
-    }
+        base.OnTrackingFound();
 
-    void OnDisable()
-    {
-        if (imageManager != null)
-        {
-            imageManager.trackedImagesChanged -= OnTrackedImagesChanged;
-        }
-    }
+        Debug.Log("🟢 Tracking Found!");
 
-    private void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
-    {
-        // Iterate through all newly added or updated images
-        foreach (ARTrackedImage trackedImage in eventArgs.added)
-        {
-            if (trackedImage.trackingState == TrackingState.Tracking)
-            {
-                SetTarget(trackedImage); // Set target when a new image is tracked
-            }
-        }
 
-        foreach (ARTrackedImage trackedImage in eventArgs.updated)
-        {
-            if (trackedImage.trackingState == TrackingState.Tracking)
-            {
-                SetTarget(trackedImage); // Update target if the image is still tracked
-            }
-            else if (trackedImage.trackingState == TrackingState.Limited)
-            {
-                // If image tracking is lost, reset and deactivate
-                if (trackedImage == currentTrackedImage)
-                {
-                    ResetTarget(); // Reset target position when tracking is lost
-                }
-            }
-            // This part checks if the image was in Limited state and comes back to Tracking state
-            else if (trackedImage.trackingState == TrackingState.Tracking && trackedImage != currentTrackedImage)
-            {
-                // Re-trigger SetTarget if the image comes back into view and is now tracked
-                SetTarget(trackedImage);
-            }
-        }
-
-        foreach (ARTrackedImage trackedImage in eventArgs.removed)
-        {
-            // Handle image removal
-            if (trackedImage == currentTrackedImage)
-            {
-                ResetTarget(); // Reset target if the image is removed
-            }
-        }
-    }
-
-    private void SetTarget(ARTrackedImage trackedImage)
-    {
-        // Set the current tracked image and position
-        currentTrackedImage = trackedImage;
-        targetPosition = trackedImage.transform.position;
-
-        // Activate the flag to indicate a valid target
-        targetFlag.SetActive(true);
-
-        // Update the target object position and activate it if not active
-        targetObject.transform.position = targetPosition;
-        if (!targetObject.activeSelf)
-        {
+        if (targetObject != null)
             targetObject.SetActive(true);
-        }
 
-        //Debug.Log($"✅ Image Tracked! Target Position: {targetObject.transform.position}");
+        // Start coroutine to wait for valid and stable image target position
+        StartCoroutine(WaitForValidImageTargetPosition());
     }
 
-    private void ResetTarget()
+    private IEnumerator WaitForValidImageTargetPosition()
     {
-        // Deactivate the flag to indicate no valid target
-        targetFlag.SetActive(false);
+        Vector3 previousPosition = Vector3.zero;
+        Vector3 currentPosition = imageTargetBehaviour.transform.position;
+        float timeElapsed = 0f;
 
-        // Reset the target when tracking is lost or image is removed
-        targetObject.transform.position = Vector3.zero; // Reset position
-        Debug.Log("❌ Image lost tracking or removed. Target reset.");
+        // Wait until the position stabilizes (the change is below the threshold for a given amount of time)
+        while (timeElapsed < positionStabilizationTime)
+        {
+            currentPosition = imageTargetBehaviour.transform.position;
+
+            // Check if the position has changed significantly
+            if (Vector3.Distance(currentPosition, previousPosition) < positionChangeThreshold)
+            {
+                timeElapsed += Time.deltaTime; // Accumulate time if the position has stabilized
+            }
+            else
+            {
+                timeElapsed = 0f; // Reset the timer if the position changes significantly
+            }
+
+            previousPosition = currentPosition;
+
+            yield return null; // Wait one frame
+        }
+
+        // After stabilization, apply the position to the targetObject
+        Vector3 targetPosition = currentPosition * scaleFactor;
+
+        if (targetObject != null)
+        {
+            targetObject.transform.position = targetPosition;
+            Debug.Log($"✅ Target Object Position Updated: {targetObject.transform.position}");
+        }
+
+        if (targetFlag != null)
+            targetFlag.SetActive(true);
+    }
+
+    protected override void OnTrackingLost()
+    {
+        base.OnTrackingLost();
+
+        Debug.Log("🔴 Tracking Lost!");
+
+        if (targetFlag != null)
+            targetFlag.SetActive(false);
+
+        if (targetObject != null)
+        {
+            targetObject.transform.position = Vector3.zero;
+            targetObject.SetActive(false);
+        }
+    }
+
+    private void OnDisable()
+    {
+        base.OnDestroy();
+
+        if (imageTargetBehaviour != null)
+        {
+            imageTargetBehaviour.OnTargetStatusChanged -= OnTargetStatusChanged;
+        }
     }
 }

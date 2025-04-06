@@ -4903,6 +4903,7 @@ GameObject:
   - component: {fileID: 2100541099862133063}
   - component: {fileID: 1984875891814309306}
   - component: {fileID: -5663876744037755512}
+  - component: {fileID: -8679994783674298810}
   m_Layer: 0
   m_Name: Snow AOE
   m_TagString: Snowfall
@@ -4940,7 +4941,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 161766660727748596}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 4
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 0
@@ -9832,6 +9833,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 30, z: 30}
   m_Center: {x: 0, y: -5, z: 0}
+--- !u!114 &-8679994783674298810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 161766660727748596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb898793194e03f4bb10dba03ec2cb70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DestroyOnRemoval: 1
 --- !u!1 &3340405831355010171
 GameObject:
   m_ObjectHideFlags: 0

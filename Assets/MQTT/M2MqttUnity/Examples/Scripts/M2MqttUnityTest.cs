@@ -63,7 +63,7 @@ namespace M2MqttUnity.Examples
     public class SendMessageData
     {
         public string topic;
-        public string playerId;
+        public int playerId;
         public string action;
         public int isActive;
         public int isVisible;
@@ -106,7 +106,7 @@ namespace M2MqttUnity.Examples
         SendMessageData player = new()
         {
             topic = "visualiser/mqtt_server",
-            playerId = "1",
+            playerId = this.currID,
             action = action,
             isActive = isActive,
             isVisible = isVisible,
@@ -319,10 +319,13 @@ namespace M2MqttUnity.Examples
                 {
                     string messagePart = ExtractJsonField(msg, "message");
                     string action = ExtractStringField(messagePart, "action");
+                    int playerIDtemp = ExtractIntField(messagePart, "player_id");
+                    if (currID == playerIDtemp){
                     arLaserTagUI.UpdateAction(action);
                     int isActive = GameObject.Find("collisionchecker").GetComponent<Flipflop>().isActive;
                     PublishMessage(action, isActive, isVisible);
                     Debug.Log($"Published isActive: {isActive}, isVisible: {isVisible}");
+                    }
                 }
             else if (temptopic == "client/visualiser/gamestate")
     {
