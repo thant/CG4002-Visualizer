@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.XR.ARFoundation;
+using Vuforia;
 
 public class SnowBombAttack : MonoBehaviour
 {
@@ -10,36 +10,23 @@ public class SnowBombAttack : MonoBehaviour
     public float launchSpeed = 2f;
 
     public GameObject trackingTarget; // The GameObject that contains the flag and target position
-
-    public GameObject targetFlag; // Reference to the target flag (set in the inspector)
-
-    private ARAnchorManager arAnchorManager; // Reference to the ARAnchorManager
-
-    void Awake()
-    {
-        // Get the ARAnchorManager from the AR Session Origin
-        arAnchorManager = FindObjectOfType<ARAnchorManager>();
-    }
+    public GameObject targetFlag;     // Reference to the target flag (set in the inspector)
 
     public void LaunchSnowbomb()
     {
-        // Check if the target flag is active (i.e., a valid target exists)
         if (!targetFlag.activeSelf)
         {
             Debug.Log("No valid target for Snowbomb, launching forward without target.");
 
-            // Use a default target when there's no valid target (launch forward from the camera)
             Vector3 defaultTargetPosition = Camera.main.transform.position + Camera.main.transform.forward * 10f;
             GameObject snowbomb = Instantiate(snowbombPrefab, Camera.main.transform.position, Quaternion.identity);
-            StartCoroutine(MoveSnowbomb(snowbomb, defaultTargetPosition)); // Move to the default target
+            StartCoroutine(MoveSnowbomb(snowbomb, defaultTargetPosition));
             return;
         }
 
-        // Access the target position from the trackingTarget (which should be set by ImageTrackingHandler)
         Vector3 targetPosition = trackingTarget.transform.position;
-
         GameObject snowbombWithTarget = Instantiate(snowbombPrefab, Camera.main.transform.position, Quaternion.identity);
-        StartCoroutine(MoveSnowbomb(snowbombWithTarget, targetPosition)); // Move towards the actual target
+        StartCoroutine(MoveSnowbomb(snowbombWithTarget, targetPosition));
     }
 
     private IEnumerator MoveSnowbomb(GameObject snowbomb, Vector3 target)
@@ -55,13 +42,12 @@ public class SnowBombAttack : MonoBehaviour
             yield return null;
         }
 
-        Destroy(snowbomb); // Destroy the snowbomb after it reaches the target
+        Destroy(snowbomb);
 
-        // Only spawn snowfall and additional prefab if there's a valid target
         if (targetFlag != null && targetFlag.activeSelf)
         {
-            SpawnSnowfall(target); // Spawn snowfall at the target position
-            SpawnAdditionalPrefab(target); // Spawn the additional prefab after snowbomb despawns
+            SpawnSnowfallWithAnchor(target);
+            SpawnAdditionalPrefab(target);
         }
         else
         {
@@ -69,15 +55,23 @@ public class SnowBombAttack : MonoBehaviour
         }
     }
 
-    private void SpawnSnowfall(Vector3 position)
+    private void SpawnSnowfallWithAnchor(Vector3 position)
     {
-        GameObject snowfall = Instantiate(snowfallPrefab, position, Quaternion.identity);
-        snowfall.transform.SetParent(null);
+        // Create a parent GameObject to act as an anchor
+        GameObject anchorObject = new GameObject("SnowfallAnchor");
+        anchorObject.transform.position = position;
+
+        // Add Vuforia's AnchorBehaviour to lock it in space
+        AnchorBehaviour anchorBehaviour = anchorObject.AddComponent<AnchorBehaviour>();
+        anchorBehaviour.enabled = true;
+
+        // Spawn the snowfall and parent it to the anchored object
+        GameObject snowfall = Instantiate(snowfallPrefab, position, Quaternion.identity, anchorObject.transform);
 
         Rigidbody snowfallRb = snowfall.AddComponent<Rigidbody>();
         snowfallRb.isKinematic = true;
 
-        Debug.Log("Snowfall started at: " + position);
+        Debug.Log("📌 Snowfall spawned and anchored using Vuforia AnchorBehaviour at: " + position);
     }
 
     private void SpawnAdditionalPrefab(Vector3 position)
@@ -89,12 +83,12 @@ public class SnowBombAttack : MonoBehaviour
 
             if (ps != null)
             {
-                ps.Play(); // Manually start the particle effect
-                Destroy(spawnedObject, ps.main.duration + ps.main.startLifetime.constantMax); // Destroy after effect ends
+                ps.Play();
+                Destroy(spawnedObject, ps.main.duration + ps.main.startLifetime.constantMax);
             }
             else
             {
-                Destroy(spawnedObject, 5f); // Fallback destroy after 5 seconds
+                Destroy(spawnedObject, 5f);
             }
 
             Debug.Log("✅ Additional prefab spawned and manually started at: " + position);

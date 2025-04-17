@@ -112,7 +112,7 @@ public class ARLaserTagUI : MonoBehaviour
                 if (isEnemyShieldActive)
                 {
                     ShieldSparks();
-                    int damageToShield = 5;
+                    int damageToShield = 0;
                     if (enemyShieldHealth >= damageToShield)
                     {
                         enemyShieldHealth -= damageToShield;
@@ -133,7 +133,7 @@ public class ARLaserTagUI : MonoBehaviour
                 }
                 else
                 {
-                    enemyHealth -= 5;
+                    enemyHealth -= 0;
                     Debug.Log("Enemy Health: " + enemyHealth);
                 }
 
